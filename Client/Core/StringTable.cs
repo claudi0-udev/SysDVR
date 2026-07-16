@@ -54,7 +54,7 @@ namespace SysDVR.Client.Core
 			public string Started =
 				"Starting to stream, keyboard shortcuts list:\n" +
 				"\t- F11: toggle full screen\n" +
-				"\t- R: rotate video\n" +
+				"\t- T: rotate video\n" +
 				"\t- esc: quit\n" +
 				"\t- return: Print debug information";
 
@@ -244,7 +244,8 @@ namespace SysDVR.Client.Core
 			public string Shortcuts =
 					"Keyboard shortcuts:\n" +
 					" - S : capture screenshot\n" +
-					" - R : rotate video\n" +
+					" - R : start/stop recording\n" +
+					" - T : rotate video\n" +
 					" - F : toggle full screen\n" +
 					" - Up/Down : change audio volume\n" +
 					" - Esc : quit";

@@ -432,6 +432,8 @@ namespace SysDVR.Client.GUI
             if (key.sym == SDL_Keycode.SDLK_s)
                 ButtonScreenshot();
             if (key.sym == SDL_Keycode.SDLK_r)
+                ButtonToggleRecording();
+            if (key.sym == SDL_Keycode.SDLK_t)
                 ButtonRotate();
             if (key.sym == SDL_Keycode.SDLK_f)
                 Program.SdlCtx.SetFullScreen(!Program.SdlCtx.IsFullscreen);
