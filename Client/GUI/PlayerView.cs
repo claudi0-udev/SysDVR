@@ -94,35 +94,37 @@ namespace SysDVR.Client.GUI
 
         public void ResolutionChanged()
         {
-            var ratio = (double)StreamInfo.VideoWidth / StreamInfo.VideoHeight;
-            var rotated = IsSideways();
+            var aspectRatio = (double)StreamInfo.VideoWidth / StreamInfo.VideoHeight;
+            var rotated = IsRotated90Or270();
             if (rotated)
-                ratio = 1 / ratio;
+                aspectRatio = 1 / aspectRatio;
 
             var w = (int)Program.SdlCtx.WindowSize.X;
             var h = (int)Program.SdlCtx.WindowSize.Y;
 
-            int fitW;
-            int fitH;
+            int fittedWidth;
+            int fittedHeight;
 
-            if (w >= h * ratio)
+            if (w >= h * aspectRatio)
             {
-                fitW = (int)(h * ratio);
-                fitH = h;
+                fittedWidth = (int)(h * aspectRatio);
+                fittedHeight = h;
             }
             else
             {
-                fitH = (int)(w / ratio);
-                fitW = w;
+                fittedHeight = (int)(w / aspectRatio);
+                fittedWidth = w;
             }
 
-            DisplayRect.w = rotated ? fitH : fitW;
-            DisplayRect.h = rotated ? fitW : fitH;
+            // SDL_RenderCopyEx rotates after scaling, so when rotating by 90°/270° we
+            // swap destination width/height to keep the final on-screen bounds correct.
+            DisplayRect.w = rotated ? fittedHeight : fittedWidth;
+            DisplayRect.h = rotated ? fittedWidth : fittedHeight;
             DisplayRect.x = w / 2 - DisplayRect.w / 2;
             DisplayRect.y = h / 2 - DisplayRect.h / 2;
         }
 
-        bool IsSideways() => (RotationQuarterTurns & 1) != 0;
+        bool IsRotated90Or270() => (RotationQuarterTurns & 1) != 0;
 
         public void RotateClockwise()
         {

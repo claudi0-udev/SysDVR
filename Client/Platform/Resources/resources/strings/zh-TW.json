@@ -119,7 +119,7 @@
   "player": {
     "confirmQuitPopupTitle": "確定退出",
     "confirmQuitLabel": "你確定想要退出吗?",
-    "shortcuts": "播放器快捷鍵：\n - S ：捕獲截屏\n - R ：旋轉畫面\n - F ：切換全屏\n - 上/下 ：改變音量\n - Esc退出",
+    "shortcuts": "播放器快捷鍵：\n - S ：捕獲截屏\n - R ：旋轉畫面\n - F ：切換全屏\n - 上/下 ：改變音量\n - Esc ：退出",
     "audioOnlyMode": "串流設定為純音訊模式.",
     "takeScreenshot": "截圖",
     "startRecording": "開始錄製",
