@@ -95,8 +95,8 @@ namespace SysDVR.Client.GUI
         public void ResolutionChanged()
         {
             var aspectRatio = (double)StreamInfo.VideoWidth / StreamInfo.VideoHeight;
-            var rotated = IsRotated90Or270();
-            if (rotated)
+            var portrait = RotationQuarterTurns is 1 or 3;
+            if (portrait)
                 aspectRatio = 1 / aspectRatio;
 
             var w = (int)Program.SdlCtx.WindowSize.X;
@@ -118,13 +118,11 @@ namespace SysDVR.Client.GUI
 
             // SDL_RenderCopyEx rotates after scaling, so when rotating by 90°/270° we
             // swap destination width/height to keep the final on-screen bounds correct.
-            DisplayRect.w = rotated ? fittedHeight : fittedWidth;
-            DisplayRect.h = rotated ? fittedWidth : fittedHeight;
+            DisplayRect.w = portrait ? fittedHeight : fittedWidth;
+            DisplayRect.h = portrait ? fittedWidth : fittedHeight;
             DisplayRect.x = w / 2 - DisplayRect.w / 2;
             DisplayRect.y = h / 2 - DisplayRect.h / 2;
         }
-
-        bool IsRotated90Or270() => (RotationQuarterTurns & 1) != 0;
 
         public void RotateClockwise()
         {
@@ -434,7 +432,7 @@ namespace SysDVR.Client.GUI
             if (key.sym == SDL_Keycode.SDLK_r)
                 ButtonToggleRecording();
             if (key.sym == SDL_Keycode.SDLK_t)
-                ButtonRotate();
+                player.RotateClockwise();
             if (key.sym == SDL_Keycode.SDLK_f)
                 Program.SdlCtx.SetFullScreen(!Program.SdlCtx.IsFullscreen);
             if (key.sym == SDL_Keycode.SDLK_UP && player.Manager.AudioTarget is not null)
@@ -509,7 +507,7 @@ namespace SysDVR.Client.GUI
                 if (HasVideo)
                 {
                     ImGui.SetCursorPosX(center);
-                    if (ImGui.Button(Strings.Rotate, btnsize)) ButtonRotate();
+                    if (ImGui.Button(Strings.Rotate, btnsize)) player.RotateClockwise();
                 }
 
                 ImGui.SetCursorPosX(center);
@@ -542,7 +540,7 @@ namespace SysDVR.Client.GUI
                 {
                     if (ImGui.Button(Strings.TakeScreenshot)) ButtonScreenshot();
                     ImGui.SameLine();
-                    if (ImGui.Button(Strings.Rotate)) ButtonRotate();
+                    if (ImGui.Button(Strings.Rotate)) player.RotateClockwise();
                     ImGui.SameLine();
                 }
                 if (ImGui.Button(recordingButtonText)) ButtonToggleRecording();
@@ -695,11 +693,6 @@ namespace SysDVR.Client.GUI
         void ButtonFullscreen()
         {
             Program.SdlCtx.SetFullScreen(!Program.SdlCtx.IsFullscreen);
-        }
-
-        void ButtonRotate()
-        {
-            player.RotateClockwise();
         }
 
         unsafe public override void RawDraw()
