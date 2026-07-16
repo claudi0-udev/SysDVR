@@ -114,7 +114,7 @@
   "player": {
     "confirmQuitPopupTitle": "Beenden bestätigen",
     "confirmQuitLabel": "Sind Sie sicher, dass Sie das Programm beenden wollen?",
-    "shortcuts": "Tastenkürzel:\n - S : Bildschirmfoto aufnehmen\n - R : Aufnahme starten/stoppen\n - F : Vollbildmodus an/aus\n - Hoch/Runter : Lautstärke ändern\n - Esc : Schließen",
+    "shortcuts": "Tastenkürzel:\n - S : Bildschirmfoto aufnehmen\n - R : Video drehen\n - F : Vollbildmodus an/aus\n - Hoch/Runter : Lautstärke ändern\n - Esc : Schließen",
     "audioOnlyMode": "Das Streaming ist auf den reinen Audiomodus eingestellt.",
     "takeScreenshot": "Screenshot",
     "startRecording": "Aufnahme starten",
@@ -124,6 +124,7 @@
     "stopStreaming": "Streaming beenden",
     "debugInfo": "Debug info",
     "enterFullScreen": "Vollbild",
+    "rotate": "Drehen",
     "hideOverlayLabel": "Auf beliebige Stelle tippen, um das Overlay auszublenden.",
     "screenshotSavedToClip": "Screenshot in der Zwischenablage gespeichert",
     "screenshotSaved": "Screenshot gespeichert in {0}",

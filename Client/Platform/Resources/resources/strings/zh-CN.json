@@ -117,7 +117,7 @@
   "player": {
     "confirmQuitPopupTitle": "Confirm quit",
     "confirmQuitLabel": "Are you sure you want to quit?",
-    "shortcuts": "播放器快捷键：\n - S ：捕获截屏\n - R ：开始/停止录制\n - F ：切换全屏\n - 上/下 ：改变音量\n - Esc ：退出",
+    "shortcuts": "播放器快捷键：\n - S ：捕获截屏\n - R ：旋转画面\n - F ：切换全屏\n - 上/下 ：改变音量\n - Esc ：退出",
     "audioOnlyMode": "流式传输设置为纯音频模式.",
     "takeScreenshot": "截屏",
     "startRecording": "开始录制",
@@ -127,6 +127,7 @@
     "stopStreaming": "停止流式传输",
     "debugInfo": "调试信息",
     "enterFullScreen": "全屏幕",
+    "rotate": "旋转",
     "hideOverlayLabel": "点击任意位置以隐藏叠加层",
     "screenshotSavedToClip": "屏幕截图保存到剪贴板",
     "screenshotSaved": "屏幕截图保存到 {0}",

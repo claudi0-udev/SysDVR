@@ -120,7 +120,7 @@
   "player": {
     "confirmQuitPopupTitle": "Conferma",
     "confirmQuitLabel": "Sei sicuro di voler uscire ?",
-    "shortcuts": "Scorciatoie da tastiera:\n - S : screenshot\n - R : avvia o ferma la registrazione\n - F : schermo intero\n - Freccia Su/Giu : regola volume\n - Esc : esci",
+    "shortcuts": "Scorciatoie da tastiera:\n - S : screenshot\n - R : ruota video\n - F : schermo intero\n - Freccia Su/Giu : regola volume\n - Esc : esci",
     "audioOnlyMode": "Lo stream è in modalità solo audio.",
     "takeScreenshot": "Screenshot",
     "startRecording": "Registra",
@@ -130,6 +130,7 @@
     "stopStreaming": "Ferma stream",
     "debugInfo": "Diagnostica",
     "enterFullScreen": "Schermo intero",
+    "rotate": "Ruota",
     "hideOverlayLabel": "Premi in uno spazio vuoto per nascondere l'overlay",
     "screenshotSavedToClip": "Screenshot salvato nella clipboard",
     "screenshotSaved": "Screenshot salvato in {0}",

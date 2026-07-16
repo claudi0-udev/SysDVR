@@ -112,7 +112,7 @@
   "player": {
     "confirmQuitPopupTitle": "Potwierdź wyjście",
     "confirmQuitLabel": "Czy jesteś pewny, że chcesz wyjść?",
-    "shortcuts": "Skróty odtwarzacza:\n - S : przechwytywanie zrzutu ekranu\n - R : rozpoczęcie/zatrzymanie nagrywania\n - F : przełącznik trybu pełnego ekranu\n - Esc : wyjście",
+    "shortcuts": "Skróty odtwarzacza:\n - S : przechwytywanie zrzutu ekranu\n - R : obróć wideo\n - F : przełącznik trybu pełnego ekranu\n - Esc : wyjście",
     "audioOnlyMode": "Strumieniowanie jest ustawione wyłącznie na tryb audio.",
     "takeScreenshot": "Zrzut ekranu",
     "startRecording": "Rozpocznij nagrywanie",
@@ -122,6 +122,7 @@
     "stopStreaming": "Zatrzymaj strumień",
     "debugInfo": "Informacje debugowania",
     "enterFullScreen": "Pełny ekran",
+    "rotate": "Obróć",
     "hideOverlayLabel": "Naciśnij w dowolnym miejscu, aby ukryć nakładkę",
     "screenshotSavedToClip": "Zrzut ekranu skopiowany do schowka",
     "screenshotSaved": "Zrzut ekranu zapisany do {0}",

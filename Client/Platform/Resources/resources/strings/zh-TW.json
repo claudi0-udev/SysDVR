@@ -119,7 +119,7 @@
   "player": {
     "confirmQuitPopupTitle": "確定退出",
     "confirmQuitLabel": "你確定想要退出吗?",
-    "shortcuts": "播放器快捷鍵：\n - S ：捕獲截屏\n - R ：開始/停止錄制\n - F ：切換全屏\n - 上/下 ：改變音量\n - Esc退出",
+    "shortcuts": "播放器快捷鍵：\n - S ：捕獲截屏\n - R ：旋轉畫面\n - F ：切換全屏\n - 上/下 ：改變音量\n - Esc退出",
     "audioOnlyMode": "串流設定為純音訊模式.",
     "takeScreenshot": "截圖",
     "startRecording": "開始錄製",
@@ -129,6 +129,7 @@
     "stopStreaming": "停止串流",
     "debugInfo": "偵錯資訊",
     "enterFullScreen": "全螢幕",
+    "rotate": "旋轉",
     "hideOverlayLabel": "點擊任意位置以隱藏疊層",
     "screenshotSavedToClip": "螢幕截圖儲存到剪貼簿",
     "screenshotSaved": "螢幕截圖儲存到 {0}",

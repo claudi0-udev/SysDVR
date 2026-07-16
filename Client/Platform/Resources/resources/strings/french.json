@@ -125,7 +125,7 @@
   "player": {
     "confirmQuitPopupTitle": "Confirmer la sortie",
     "confirmQuitLabel": "Etes-vous sûr de vouloir quitter?",
-    "shortcuts": "Raccourcis clavier :\n - S : Capture d'écran\n - R : Démarrer/arrêter l'enregistrement\n - F : Activer le plein écran\n - Haut/Bas : Changer le volume audio\n - Echap : Quitter",
+    "shortcuts": "Raccourcis clavier :\n - S : Capture d'écran\n - R : Faire pivoter la vidéo\n - F : Activer le plein écran\n - Haut/Bas : Changer le volume audio\n - Echap : Quitter",
     "audioOnlyMode": "Le stream est en mode audio seul.",
     "takeScreenshot": "Capture d'écran",
     "startRecording": "Début enregistrement",
@@ -135,6 +135,7 @@
     "stopStreaming": "Stream stoppé",
     "debugInfo": "Info de débogage",
     "enterFullScreen": "Plein écran",
+    "rotate": "Pivoter",
     "hideOverlayLabel": "Appuyer n'importe où pour masquer l'interface",
     "screenshotSavedToClip": "Capture d'écran enregistrée dans le presse-papier",
     "screenshotSaved": "Capture d'écran enregistrée dans {0}",

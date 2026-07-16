@@ -45,6 +45,7 @@ namespace SysDVR.Client.GUI
         readonly FramerateCounter fps = new();
 
         SDL_Rect DisplayRect = new SDL_Rect();
+        int RotationQuarterTurns = 0;
 
         public PlayerCore(PlayerManager manager)
         {
@@ -93,24 +94,40 @@ namespace SysDVR.Client.GUI
 
         public void ResolutionChanged()
         {
-            const double Ratio = (double)StreamInfo.VideoWidth / StreamInfo.VideoHeight;
+            var ratio = (double)StreamInfo.VideoWidth / StreamInfo.VideoHeight;
+            var rotated = IsSideways();
+            if (rotated)
+                ratio = 1 / ratio;
 
             var w = (int)Program.SdlCtx.WindowSize.X;
             var h = (int)Program.SdlCtx.WindowSize.Y;
 
-            if (w >= h * Ratio)
+            int fitW;
+            int fitH;
+
+            if (w >= h * ratio)
             {
-                DisplayRect.w = (int)(h * Ratio);
-                DisplayRect.h = h;
+                fitW = (int)(h * ratio);
+                fitH = h;
             }
             else
             {
-                DisplayRect.h = (int)(w / Ratio);
-                DisplayRect.w = w;
+                fitH = (int)(w / ratio);
+                fitW = w;
             }
 
+            DisplayRect.w = rotated ? fitH : fitW;
+            DisplayRect.h = rotated ? fitW : fitH;
             DisplayRect.x = w / 2 - DisplayRect.w / 2;
             DisplayRect.y = h / 2 - DisplayRect.h / 2;
+        }
+
+        bool IsSideways() => (RotationQuarterTurns & 1) != 0;
+
+        public void RotateClockwise()
+        {
+            RotationQuarterTurns = (RotationQuarterTurns + 1) & 3;
+            ResolutionChanged();
         }
 
         int debugFps = 0;
@@ -162,7 +179,7 @@ namespace SysDVR.Client.GUI
             }
 
             // Bypass imgui for this
-            SDL_RenderCopy(Program.SdlCtx.RendererHandle, Video.TargetTexture, ref Video.TargetTextureSize, ref DisplayRect);
+            DrawTexture();
 
             // Signal we're presenting something to SDL to kick the decoding thread
             // We don't care if we didn't actually decode anything we just do it here
@@ -182,10 +199,26 @@ namespace SysDVR.Client.GUI
             if (!Video.DecodeFrame())
                 return false;
 
-            SDL_RenderCopy(Program.SdlCtx.RendererHandle, Video.TargetTexture, ref Video.TargetTextureSize, ref DisplayRect);
+            DrawTexture();
             Video.Decoder.OnFrameEvent.Set();
 
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void DrawTexture()
+        {
+            if (Video is null)
+                return;
+
+            if (RotationQuarterTurns == 0)
+            {
+                SDL_RenderCopy(Program.SdlCtx.RendererHandle, Video.TargetTexture, ref Video.TargetTextureSize, ref DisplayRect);
+            }
+            else
+            {
+                SDL_RenderCopyEx(Program.SdlCtx.RendererHandle, Video.TargetTexture, ref Video.TargetTextureSize, ref DisplayRect, RotationQuarterTurns * 90, IntPtr.Zero, SDL_RendererFlip.SDL_FLIP_NONE);
+            }
         }
 
         private unsafe void InitializeLoadingTexture()
@@ -397,7 +430,7 @@ namespace SysDVR.Client.GUI
             if (key.sym == SDL_Keycode.SDLK_s)
                 ButtonScreenshot();
             if (key.sym == SDL_Keycode.SDLK_r)
-                ButtonToggleRecording();
+                ButtonRotate();
             if (key.sym == SDL_Keycode.SDLK_f)
                 Program.SdlCtx.SetFullScreen(!Program.SdlCtx.IsFullscreen);
             if (key.sym == SDL_Keycode.SDLK_UP && player.Manager.AudioTarget is not null)
@@ -469,6 +502,12 @@ namespace SysDVR.Client.GUI
                     if (ImGui.Button(Strings.TakeScreenshot, btnsize)) ButtonScreenshot();
                 }
 
+                if (HasVideo)
+                {
+                    ImGui.SetCursorPosX(center);
+                    if (ImGui.Button(Strings.Rotate, btnsize)) ButtonRotate();
+                }
+
                 ImGui.SetCursorPosX(center);
                 if (ImGui.Button(recordingButtonText, btnsize)) ButtonToggleRecording();
 
@@ -498,6 +537,8 @@ namespace SysDVR.Client.GUI
                 if (HasVideo)
                 {
                     if (ImGui.Button(Strings.TakeScreenshot)) ButtonScreenshot();
+                    ImGui.SameLine();
+                    if (ImGui.Button(Strings.Rotate)) ButtonRotate();
                     ImGui.SameLine();
                 }
                 if (ImGui.Button(recordingButtonText)) ButtonToggleRecording();
@@ -650,6 +691,11 @@ namespace SysDVR.Client.GUI
         void ButtonFullscreen()
         {
             Program.SdlCtx.SetFullScreen(!Program.SdlCtx.IsFullscreen);
+        }
+
+        void ButtonRotate()
+        {
+            player.RotateClockwise();
         }
 
         unsafe public override void RawDraw()
