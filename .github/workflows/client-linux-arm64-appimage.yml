@@ -22,8 +22,9 @@ jobs:
 
       - name: Install Cross Compiler and Build Tools
         run: |
+          sudo dpkg --add-architecture arm64
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libsdl2-dev libusb-1.0-0-dev cmake
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libsdl2-dev:arm64 libusb-1.0-0-dev:arm64 cmake
 
       - name: Compile cimgui.so for ARM64
         run: |
