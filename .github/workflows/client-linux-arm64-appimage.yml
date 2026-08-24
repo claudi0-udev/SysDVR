@@ -31,10 +31,11 @@ jobs:
           if [ -f "apply_patches.sh" ]; then
             bash apply_patches.sh || true
           fi
-          mkdir build_arm64 && cd build_arm64
+          mkdir -p build_arm64 && cd build_arm64
           aarch64-linux-gnu-g++ -shared -fPIC -O2 \
             -I../cimgui -I../cimgui/imgui \
             -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 \
+            -DIMGUI_IMPL_API='extern "C"' \
             ../cimgui/cimgui.cpp \
             ../cimgui/imgui/imgui.cpp \
             ../cimgui/imgui/imgui_draw.cpp \
@@ -54,7 +55,7 @@ jobs:
         run: |
           mkdir -p Client/Platform/Resources/linux-arm64/native
           cp CimguiSDL2Cross/build_arm64/cimgui.so Client/Platform/Resources/linux-arm64/native/cimgui.so
-          dotnet publish Client/Client.csproj -c Release -r linux-arm64 --self-contained true -o ./published-arm64
+          dotnet publish Client/Client.csproj -c Release -r linux-arm64 -p:PublishAot=false --self-contained true -o ./published-arm64
 
       - name: Create AppDir Structure
         run: |
@@ -62,6 +63,7 @@ jobs:
           mkdir -p AppDir/usr/lib
           cp -r published-arm64/* AppDir/usr/bin/
           cp CimguiSDL2Cross/build_arm64/cimgui.so AppDir/usr/lib/
+          cp CimguiSDL2Cross/build_arm64/cimgui.so AppDir/usr/bin/
 
           cp Client/Platform/Linux/com.github.exelix11.sysdvr.desktop AppDir/com.github.exelix11.sysdvr.desktop
           cp Client/Platform/Linux/flatpak_icon.png AppDir/com.github.exelix11.sysdvr.png
@@ -72,16 +74,18 @@ jobs:
           SELF=$(readlink -f "$0")
           HERE=$(dirname "$SELF")
           export PATH="${HERE}/usr/bin:${PATH}"
-          export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/bin:${HERE}/usr/bin/runtimes/linux-arm64/native:${LD_LIBRARY_PATH}"
+          export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/bin:${HERE}/usr/bin/runtimes/linux-arm64/native:/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}"
           exec "${HERE}/usr/bin/SysDVR-Client" "$@"
           EOF
           chmod +x AppDir/AppRun
 
       - name: Download appimagetool and Build AppImage
         run: |
+          curl -sSL -o runtime-aarch64 https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-aarch64
           curl -sSL -o appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool
-          ARCH=aarch64 ./appimagetool --no-appstream AppDir SysDVR-Client-aarch64.AppImage
+          ./appimagetool --appimage-extract
+          ARCH=aarch64 ./squashfs-root/AppRun --runtime-file runtime-aarch64 --no-appstream AppDir SysDVR-Client-aarch64.AppImage
 
       - name: Upload AppImage Artifact
         uses: actions/upload-artifact@v4
