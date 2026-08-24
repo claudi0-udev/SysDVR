@@ -1,4 +1,4 @@
-﻿using SysDVR.Client;
+using SysDVR.Client;
 using SysDVR.Client.Platform;
 using System;
 using System.Collections.Generic;
@@ -92,7 +92,7 @@ public class FunctionResolver : IFunctionResolver
         else if (Program.IsMacOs)
             return $"lib{libraryName}.{version}.dylib";
         else if (Program.IsLinux)
-            return $"lib{libraryName}.so.{version}";
+            return $"lib{libraryName}.so";
 
         return libraryName;
     }
