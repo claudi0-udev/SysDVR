@@ -22,9 +22,10 @@ jobs:
 
       - name: Install Cross Compiler and Build Tools
         run: |
-          sudo dpkg --add-architecture arm64
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libsdl2-dev:arm64 libusb-1.0-0-dev:arm64 cmake
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libusb-1.0-0-dev cmake
+          curl -sSL -o sdl2.tar.gz https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.30.1.tar.gz
+          tar -xzf sdl2.tar.gz
 
       - name: Compile cimgui.so for ARM64
         run: |
@@ -34,7 +35,7 @@ jobs:
           fi
           mkdir -p build_arm64 && cd build_arm64
           aarch64-linux-gnu-g++ -shared -fPIC -O2 \
-            -I../cimgui -I../cimgui/imgui $(pkg-config --cflags sdl2) \
+            -I../cimgui -I../cimgui/imgui -I../../../SDL-release-2.30.1/include \
             -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 \
             -DIMGUI_IMPL_API='extern "C"' \
             ../cimgui/cimgui.cpp \
