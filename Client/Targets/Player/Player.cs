@@ -1,4 +1,4 @@
-﻿using FFmpeg.AutoGen;
+using FFmpeg.AutoGen;
 using SysDVR.Client.Core;
 using SysDVR.Client.Sources;
 using System;
@@ -342,14 +342,15 @@ namespace SysDVR.Client.Targets.Player
             else
             {
                 // On the first frame we get check if we need to use a converter
-                if (!converterFirstFrameCheck && Decoder.CodecCtx->pix_fmt != AVPixelFormat.AV_PIX_FMT_NONE)
+                var actualFormat = Decoder.ReceiveFrame->format != -1 ? (AVPixelFormat)Decoder.ReceiveFrame->format : Decoder.CodecCtx->pix_fmt;
+                if (!converterFirstFrameCheck && actualFormat != AVPixelFormat.AV_PIX_FMT_NONE)
                 {
-					Program.DebugLog($"Decoder.CodecCtx uses pixel format {Decoder.CodecCtx->pix_fmt}");
+                    Program.DebugLog($"Frame format identified as {actualFormat} (codecctx format: {Decoder.CodecCtx->pix_fmt})");
 
                     converterFirstFrameCheck = true;
-                    if (Decoder.CodecCtx->pix_fmt != TargetDecodingFormat)
+                    if (actualFormat != TargetDecodingFormat)
                     {
-                        Converter = InitializeConverter(Decoder.CodecCtx);
+                        Converter = InitializeConverter(Decoder.CodecCtx, actualFormat);
                         // Render to the converted frame
                         Decoder.RenderFrame = Converter.Frame;
                     }
@@ -375,12 +376,12 @@ namespace SysDVR.Client.Targets.Player
             }
         }
 
-        unsafe static FormatConverterContext InitializeConverter(AVCodecContext* codecctx)
+        unsafe static FormatConverterContext InitializeConverter(AVCodecContext* codecctx, AVPixelFormat srcFormat)
         {
             AVFrame* dstframe = null;
             SwsContext* swsContext = null;
 
-            Program.DebugLog($"Initializing converter for {codecctx->pix_fmt}");
+            Program.DebugLog($"Initializing converter for {srcFormat}");
 
             dstframe = av_frame_alloc();
 
@@ -393,7 +394,7 @@ namespace SysDVR.Client.Targets.Player
 
             av_frame_get_buffer(dstframe, 32).AssertZero("Couldn't allocate the buffer for the converted frame");
 
-            swsContext = sws_getContext(codecctx->width, codecctx->height, codecctx->pix_fmt,
+            swsContext = sws_getContext(codecctx->width, codecctx->height, srcFormat,
                                         dstframe->width, dstframe->height, (AVPixelFormat)dstframe->format,
                                         SWS_FAST_BILINEAR, null, null, null);
 
