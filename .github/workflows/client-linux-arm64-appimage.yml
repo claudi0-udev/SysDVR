@@ -33,7 +33,7 @@ jobs:
           fi
           mkdir -p build_arm64 && cd build_arm64
           aarch64-linux-gnu-g++ -shared -fPIC -O2 \
-            -I../cimgui -I../cimgui/imgui -I/usr/include/SDL2 \
+            -I../cimgui -I../cimgui/imgui $(pkg-config --cflags sdl2) \
             -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 \
             -DIMGUI_IMPL_API='extern "C"' \
             ../cimgui/cimgui.cpp \
