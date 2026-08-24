@@ -8,13 +8,13 @@ public static unsafe partial class ffmpeg
 {
     public static Dictionary<string, int> LibraryVersionMap = new Dictionary<string, int>
     {
-        {"avcodec", 59},
-        {"avdevice", 59},
-        {"avfilter", 8},
-        {"avformat", 59},
-        {"avutil", 57},
-        {"postproc", 56},
-        {"swresample", 4},
-        {"swscale", 6},
+        {"avcodec", 61},
+        {"avdevice", 61},
+        {"avfilter", 10},
+        {"avformat", 61},
+        {"avutil", 59},
+        {"postproc", 58},
+        {"swresample", 5},
+        {"swscale", 8},
     };
 }
