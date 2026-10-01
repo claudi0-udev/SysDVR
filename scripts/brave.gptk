@@ -12,7 +12,7 @@ r1 = alt_right
 l2 = mouse_wheel_down
 r2 = mouse_wheel_up
 
-l3 = mouse_left
+l3 = mouse_slow
 r3 = esc
 
 up = up
@@ -30,5 +30,8 @@ right_analog_down = mouse_wheel_down
 right_analog_left = alt_left
 right_analog_right = alt_right
 
-mouse_scale = 512
-mouse_delay = 16
+# Sensibilidad y velocidad del cursor suave (192 en lugar de 512)
+mouse_scale = 192
+mouse_delay = 12
+mouse_slow_scale = 64
+mouse_wheel_amount = 1

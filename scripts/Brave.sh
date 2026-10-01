@@ -1,25 +1,23 @@
 #!/bin/bash
 pkill -9 -f brave 2>/dev/null || true
 pkill -9 gptokeyb 2>/dev/null || true
+pkill -9 gptokeyb2 2>/dev/null || true
 rm -rf /storage/.config/brave/Singleton* 2>/dev/null
 
 export XDG_RUNTIME_DIR=/var/run/0-runtime-dir
 export WAYLAND_DISPLAY=wayland-1
 export DBUS_SESSION_BUS_ADDRESS=disabled:
 
-# Iniciar gptokeyb mapeando el mando como raton y teclas
 controlfolder="/storage/roms/ports/PortMaster"
-if [ -f "$controlfolder/control.txt" ]; then
-    source "$controlfolder/control.txt" 2>/dev/null || true
-    source "$controlfolder/device_info.txt" 2>/dev/null || true
-fi
 
-# Lanzar el mapeador de mando en segundo plano
-if [ -x "$controlfolder/gptokeyb" ]; then
-    "$controlfolder/gptokeyb" -c "/storage/roms/ports/.brave/brave.gptk" &
+# Iniciar gptokeyb2 (que soporta mouse_wheel_up/down nativamente en los sticks analogicos)
+if [ -x "$controlfolder/gptokeyb2" ] && [ -f "$controlfolder/libinterpose.aarch64.so" ]; then
+    LD_LIBRARY_PATH="$controlfolder:$LD_LIBRARY_PATH" \
+    LD_PRELOAD="$controlfolder/libinterpose.aarch64.so" \
+    "$controlfolder/gptokeyb2" "AppRun" -c "/storage/roms/ports/.brave/brave.gptk" &
     GPTOKEYB_PID=$!
-elif [ -x "/usr/bin/gptokeyb" ]; then
-    /usr/bin/gptokeyb -c "/storage/roms/ports/.brave/brave.gptk" &
+elif [ -x "$controlfolder/gptokeyb" ]; then
+    "$controlfolder/gptokeyb" -c "/storage/roms/ports/.brave/brave.gptk" &
     GPTOKEYB_PID=$!
 fi
 
@@ -31,8 +29,9 @@ cd /storage/roms/ports/.brave/app/squashfs-root
   --ozone-platform=wayland \
   "$@"
 
-# Al salir de Brave, matar el proceso del mapeador del mando
+# Matar el mapeador del mando al salir de Brave
 if [ -n "$GPTOKEYB_PID" ]; then
     kill -9 "$GPTOKEYB_PID" 2>/dev/null || true
 fi
+pkill -9 gptokeyb2 2>/dev/null || true
 pkill -9 gptokeyb 2>/dev/null || true
