@@ -9,8 +9,8 @@ y = ctrl
 l1 = alt_left
 r1 = alt_right
 
-l2 = mouse_wheel_down
-r2 = mouse_wheel_up
+l2 = mouse_wheel_up
+r2 = mouse_wheel_down
 
 l3 = mouse_slow
 r3 = esc
@@ -20,18 +20,21 @@ down = down
 left = left
 right = right
 
+# Movimiento del ratón mucho más lento y controlable
 left_analog_up = mouse_movement_up
 left_analog_down = mouse_movement_down
 left_analog_left = mouse_movement_left
 left_analog_right = mouse_movement_right
 
-right_analog_up = mouse_wheel_up
-right_analog_down = mouse_wheel_down
+# Stick derecho invertido para scroll natural (arriba sube, abajo baja)
+right_analog_up = mouse_wheel_down
+right_analog_down = mouse_wheel_up
 right_analog_left = alt_left
 right_analog_right = alt_right
 
-# Sensibilidad y velocidad del cursor suave (192 en lugar de 512)
-mouse_scale = 192
-mouse_delay = 12
-mouse_slow_scale = 64
-mouse_wheel_amount = 1
+# Sensibilidad reducida significativamente para maxima precision
+mouse_scale = 80
+mouse_delay = 16
+mouse_slow_scale = 30
+mouse_wheel_amount = 5
+mouse_wheel_delay = 8
