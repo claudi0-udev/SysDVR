@@ -415,11 +415,37 @@ bool fsr_render(
             return false;
     }
 
-    if (!resize_easu_fbo(dstW, dstH))
-        return false;
-
     SDL_Renderer* renderer = (SDL_Renderer*)sdlRenderer;
     SDL_Texture* yuvTex = (SDL_Texture*)sdlTexture;
+
+    int win_w = 0, win_h = 0;
+    SDL_GetRendererOutputSize(renderer, &win_w, &win_h);
+
+    // Auto-detect and handle DPI scale factor (e.g. Wayland 2x / 4K / Retina)
+    float scale_x = 1.0f, scale_y = 1.0f;
+    SDL_RenderGetScale(renderer, &scale_x, &scale_y);
+    if (scale_x > 1.05f || scale_y > 1.05f) {
+        if (dstW <= (int)((float)win_w / scale_x + 2.0f)) {
+            dstX = (int)roundf((float)dstX * scale_x);
+            dstY = (int)roundf((float)dstY * scale_y);
+            dstW = (int)roundf((float)dstW * scale_x);
+            dstH = (int)roundf((float)dstH * scale_y);
+        }
+    } else if (win_w > 0 && win_h > 0) {
+        int log_w = 0, log_h = 0;
+        SDL_RenderGetLogicalSize(renderer, &log_w, &log_h);
+        if (log_w > 0 && log_h > 0 && dstW <= log_w + 2) {
+            float s_x = (float)win_w / (float)log_w;
+            float s_y = (float)win_h / (float)log_h;
+            dstX = (int)roundf((float)dstX * s_x);
+            dstY = (int)roundf((float)dstY * s_y);
+            dstW = (int)roundf((float)dstW * s_x);
+            dstH = (int)roundf((float)dstH * s_y);
+        }
+    }
+
+    if (!resize_easu_fbo(dstW, dstH))
+        return false;
 
     // Step 1: Hardware/GPU YUV -> RGBA conversion via SDL RenderCopy
     SDL_SetRenderTarget(renderer, fsr.sdl_rgba_src);
@@ -485,8 +511,6 @@ bool fsr_render(
     gl.glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
     
     // In OpenGL, viewport Y starts from bottom-left
-    int win_w = 0, win_h = 0;
-    SDL_GetRendererOutputSize(renderer, &win_w, &win_h);
     int gl_y = win_h - (dstY + dstH);
     gl.glViewport(dstX, gl_y, dstW, dstH);
 

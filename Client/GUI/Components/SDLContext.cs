@@ -1,4 +1,4 @@
-﻿using ImGuiNET;
+using ImGuiNET;
 using SDL2;
 using SysDVR.Client.Core;
 using System;
@@ -40,9 +40,9 @@ namespace SysDVR.Client.GUI.Components
         internal bool DebugPrintSdlEvents = false;
 
         // Scaling info
-        Vector2 PixelSize;
-        Vector2 WantedDPIScale;
-        bool IsWantedScale;
+        public Vector2 PixelSize { get; private set; }
+        public Vector2 WantedDPIScale { get; private set; }
+        public bool IsWantedScale { get; private set; }
 
         // On android we must manually check for when imgui needs the keyboard and open it
         // TODO: Will this also open the keyboard when there's a physical one connected?

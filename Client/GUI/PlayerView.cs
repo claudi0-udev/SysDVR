@@ -217,11 +217,23 @@ namespace SysDVR.Client.GUI
             {
                 try
                 {
+                    float dpiX = Program.SdlCtx.WindowSize.X > 0 && Program.SdlCtx.PixelSize.X > 0
+                        ? (Program.SdlCtx.PixelSize.X / Program.SdlCtx.WindowSize.X)
+                        : (Program.SdlCtx.WantedDPIScale.X > 0 ? Program.SdlCtx.WantedDPIScale.X : 1.0f);
+                    float dpiY = Program.SdlCtx.WindowSize.Y > 0 && Program.SdlCtx.PixelSize.Y > 0
+                        ? (Program.SdlCtx.PixelSize.Y / Program.SdlCtx.WindowSize.Y)
+                        : (Program.SdlCtx.WantedDPIScale.Y > 0 ? Program.SdlCtx.WantedDPIScale.Y : 1.0f);
+
+                    int targetX = (int)Math.Round(DisplayRect.x * dpiX);
+                    int targetY = (int)Math.Round(DisplayRect.y * dpiY);
+                    int targetW = (int)Math.Round(DisplayRect.w * dpiX);
+                    int targetH = (int)Math.Round(DisplayRect.h * dpiY);
+
                     if (FsrNative.Render(
                         Program.SdlCtx.RendererHandle,
                         Video.TargetTexture,
                         StreamInfo.VideoWidth, StreamInfo.VideoHeight,
-                        DisplayRect.x, DisplayRect.y, DisplayRect.w, DisplayRect.h,
+                        targetX, targetY, targetW, targetH,
                         Program.Options.FsrSharpness))
                     {
                         return;
@@ -737,11 +749,14 @@ namespace SysDVR.Client.GUI
                 ImGui.SameLine(120);
                 ImGui.Text($"{StreamInfo.VideoWidth}x{StreamInfo.VideoHeight} (720p)");
 
+                int outW = Program.SdlCtx.PixelSize.X > 0 ? (int)Program.SdlCtx.PixelSize.X : (int)io.DisplaySize.X;
+                int outH = Program.SdlCtx.PixelSize.Y > 0 ? (int)Program.SdlCtx.PixelSize.Y : (int)io.DisplaySize.Y;
+
                 ImGui.Text("Output Res:");
                 ImGui.SameLine(120);
-                ImGui.Text($"{(int)io.DisplaySize.X}x{(int)io.DisplaySize.Y}");
+                ImGui.Text($"{outW}x{outH}");
 
-                float scaleRatio = io.DisplaySize.Y / StreamInfo.VideoHeight;
+                float scaleRatio = (float)outH / StreamInfo.VideoHeight;
                 ImGui.Text("Scale Factor:");
                 ImGui.SameLine(120);
                 ImGui.Text($"{scaleRatio:0.00}x");
