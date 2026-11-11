@@ -1,4 +1,4 @@
-﻿using ImGuiNET;
+using ImGuiNET;
 using SysDVR.Client.App;
 using SysDVR.Client.Core;
 using SysDVR.Client.Platform;
@@ -142,7 +142,8 @@ namespace SysDVR.Client.GUI
 			[
 				new(Program.Strings.Settings.ScaleMode_Linear, SDLScaleMode.Linear),
 				new(Program.Strings.Settings.ScaleMode_Narest, SDLScaleMode.Nearest),
-				new(Program.Strings.Settings.ScaleMode_Best, SDLScaleMode.Best)
+				new(Program.Strings.Settings.ScaleMode_Best, SDLScaleMode.Best),
+				new("FSR 1.0 (AMD FidelityFX)", SDLScaleMode.FSR)
 			],
 			Program.Options.RendererScale
 		);
@@ -261,6 +262,12 @@ namespace SysDVR.Client.GUI
 				ImGui.Checkbox(Strings.HideSerials, ref Program.Options.HideSerials);
 				ImGui.Checkbox(Strings.Hotkeys, ref Program.Options.PlayerHotkeys);
 				ScaleModes.Draw(ref Program.Options.RendererScale);
+				if (Program.Options.RendererScale == SDLScaleMode.FSR)
+				{
+					ImGui.Indent();
+					ImGui.SliderFloat("FSR Sharpness", ref Program.Options.FsrSharpness, 0.0f, 1.0f, "%.2f");
+					ImGui.Unindent();
+				}
 				AudioModes.Draw(ref Program.Options.AudioPlayerMode);
 
 				// Recording save path, TODO: implement file picker but doing it cross platform seems like a major headache

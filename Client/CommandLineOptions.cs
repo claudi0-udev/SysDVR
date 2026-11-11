@@ -1,4 +1,4 @@
-﻿using SysDVR.Client.Core;
+using SysDVR.Client.Core;
 using SysDVR.Client.Platform;
 using System;
 using System.Linq;
@@ -43,6 +43,8 @@ namespace SysDVR.Client
 			// Advanced options
 			new OptionArg("--decoder", (x, v) => x.RequestedDecoderName = v),
 			new OptionNoArg("--software-render", (x) => x.SoftwareRendering = true),
+			new OptionNoArg("--fsr", (x) => x.EnableFsr = true),
+			new OptionArg("--fsr-sharpness", (x, v) => x.FsrSharpness = v),
 
 			// Deprecated RTSP options
 			new OptionNoArg("--rtsp", x => x.RTSPDeprecationWarning = true),
@@ -168,6 +170,8 @@ namespace SysDVR.Client
 		public bool LegacyPlayer;
 
 		public bool SoftwareRendering;
+		public bool? EnableFsr;
+		public string? FsrSharpness;
 
 		public void ApplyOptionOverrides() 
 		{
@@ -199,6 +203,12 @@ namespace SysDVR.Client
 
 			if (SoftwareRendering)
 				Program.Options.ForceSoftwareRenderer = true;
+
+			if (EnableFsr == true)
+				Program.Options.RendererScale = SDLScaleMode.FSR;
+
+			if (FsrSharpness is not null && float.TryParse(FsrSharpness, System.Globalization.CultureInfo.InvariantCulture, out var sharpness))
+				Program.Options.FsrSharpness = Math.Clamp(sharpness, 0.0f, 1.0f);
 
 			if (Volume is not null && int.TryParse(Volume, out var vol))
 			{ 
@@ -251,6 +261,8 @@ Player options:
 	Since 6.0 SysDVR-Client only comes with the built-in player, the following options are available:
 	`--volume <value>` : Set the player volume to a number between 0 and 100
 	`--decoder <name>` : Use a specific decoder for ffmpeg decoding, you can see all supported codecs with --show-decoders
+	`--fsr` : Enable AMD FidelityFX Super Resolution (FSR 1.0) upscaling
+	`--fsr-sharpness <value>` : Set FSR sharpness between 0.0 (soft) and 1.0 (sharp), default is 0.8
 	`--fullscreen` : Start in full screen mode. Press F11 to toggle manually
 	`--title <some text>` : Adds the argument string to the title of the player window
 	`--legacy` : Use the old player without the GUI, not all the other options are available when this is used

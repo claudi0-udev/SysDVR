@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -17,7 +17,8 @@ namespace SysDVR.Client.Core
     {
         Linear,
         Nearest,
-        Best
+        Best,
+        FSR
     }
 
     public enum SDLAudioMode 
@@ -52,6 +53,7 @@ namespace SysDVR.Client.Core
         // SDL options
         public bool ForceSoftwareRenderer;
         public SDLScaleMode RendererScale = SDLScaleMode.Linear;
+        public float FsrSharpness = 0.8f;
         public SDLAudioMode AudioPlayerMode = SDLAudioMode.Auto;
 
         // Sysmodule options
@@ -74,6 +76,7 @@ namespace SysDVR.Client.Core
             SDLScaleMode.Linear => "linear",
             SDLScaleMode.Nearest => "nearest",
             SDLScaleMode.Best => "best",
+            SDLScaleMode.FSR => "linear",
             _ => throw new NotImplementedException(),
         };
 

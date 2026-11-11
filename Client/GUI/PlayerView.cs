@@ -1,4 +1,4 @@
-﻿using ImGuiNET;
+using ImGuiNET;
 using SysDVR.Client.App;
 using SysDVR.Client.Core;
 using SysDVR.Client.GUI.Components;
@@ -88,6 +88,8 @@ namespace SysDVR.Client.GUI
             // Dispose of unmanaged resources
             Audio?.Dispose();
             Video?.Dispose();
+
+            try { FsrNative.Destroy(); } catch { }
 
             Manager.Dispose();
         }
@@ -210,6 +212,26 @@ namespace SysDVR.Client.GUI
         {
             if (Video is null)
                 return;
+
+            if (Program.Options.RendererScale == SDLScaleMode.FSR && RotationQuarterTurns == 0)
+            {
+                try
+                {
+                    if (FsrNative.Render(
+                        Program.SdlCtx.RendererHandle,
+                        Video.TargetTexture,
+                        StreamInfo.VideoWidth, StreamInfo.VideoHeight,
+                        DisplayRect.x, DisplayRect.y, DisplayRect.w, DisplayRect.h,
+                        Program.Options.FsrSharpness))
+                    {
+                        return;
+                    }
+                }
+                catch
+                {
+                    // Fallback to standard SDL_RenderCopy on error
+                }
+            }
 
             if (RotationQuarterTurns == 0)
             {
@@ -435,6 +457,11 @@ namespace SysDVR.Client.GUI
                 player.RotateClockwise();
             if (key.sym == SDL_Keycode.SDLK_f)
                 Program.SdlCtx.SetFullScreen(!Program.SdlCtx.IsFullscreen);
+            if (key.sym == SDL_Keycode.SDLK_u && HasVideo)
+            {
+                Program.Options.RendererScale = Program.Options.RendererScale == SDLScaleMode.FSR ? SDLScaleMode.Linear : SDLScaleMode.FSR;
+                MessageUi($"FSR 1.0: {(Program.Options.RendererScale == SDLScaleMode.FSR ? "Enabled" : "Disabled")}");
+            }
             if (key.sym == SDL_Keycode.SDLK_UP && player.Manager.AudioTarget is not null)
                 player.Manager.AudioTarget.Volume += 0.1f;
             if (key.sym == SDL_Keycode.SDLK_DOWN && player.Manager.AudioTarget is not null)
@@ -525,6 +552,21 @@ namespace SysDVR.Client.GUI
                 ImGui.SetCursorPosX(center);
                 if (ImGui.Button(Strings.EnterFullScreen, btnsize)) ButtonFullscreen();
 
+                if (HasVideo)
+                {
+                    bool fsrActive = Program.Options.RendererScale == SDLScaleMode.FSR;
+                    ImGui.SetCursorPosX(center);
+                    if (ImGui.Checkbox("FSR 1.0 (AMD)", ref fsrActive))
+                        Program.Options.RendererScale = fsrActive ? SDLScaleMode.FSR : SDLScaleMode.Linear;
+
+                    if (fsrActive)
+                    {
+                        ImGui.SetCursorPosX(center);
+                        ImGui.SetNextItemWidth(btnwidth);
+                        ImGui.SliderFloat("##FsrSharpness", ref Program.Options.FsrSharpness, 0.0f, 1.0f, "FSR Sharpness: %.2f");
+                    }
+                }
+
                 ImGui.NewLine();
                 DrawVolumeSlider(center, btnwidth);
             }
@@ -557,9 +599,25 @@ namespace SysDVR.Client.GUI
                 if (ImGui.Button(Strings.EnterFullScreen)) ButtonFullscreen();
                 uiOptCenter.EndHere();
 
+                if (HasVideo)
+                {
+                    var w = ImGui.GetWindowSize().X;
+                    bool fsrActive = Program.Options.RendererScale == SDLScaleMode.FSR;
+                    ImGui.SetCursorPosX(w / 4);
+                    if (ImGui.Checkbox("FSR 1.0 (AMD)", ref fsrActive))
+                        Program.Options.RendererScale = fsrActive ? SDLScaleMode.FSR : SDLScaleMode.Linear;
+
+                    if (fsrActive)
+                    {
+                        ImGui.SameLine();
+                        ImGui.SetNextItemWidth(w / 4);
+                        ImGui.SliderFloat("##FsrSharpness", ref Program.Options.FsrSharpness, 0.0f, 1.0f, "Sharpness: %.2f");
+                    }
+                }
+
                 ImGui.NewLine();
-                var w = ImGui.GetWindowSize().X;
-                DrawVolumeSlider(w / 4, w / 2);
+                var winW = ImGui.GetWindowSize().X;
+                DrawVolumeSlider(winW / 4, winW / 2);
             }
 
             if (!OverlayAlwaysShowing)
