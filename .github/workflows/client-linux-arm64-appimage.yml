@@ -37,7 +37,6 @@ jobs:
           mkdir -p build_arm64 && cd build_arm64
           aarch64-linux-gnu-g++ -shared -fPIC -O2 \
             -I../cimgui -I../cimgui/imgui -I../cimgui/imgui/backends \
-            -I../../Client/Native/fsr \
             -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 \
             -DIMGUI_IMPL_API='extern "C"' \
             ../cimgui/cimgui.cpp \
@@ -48,7 +47,6 @@ jobs:
             ../cimgui/imgui/imgui_tables.cpp \
             ../cimgui/imgui/backends/imgui_impl_sdl2.cpp \
             ../cimgui/imgui/backends/imgui_impl_sdlrenderer2.cpp \
-            ../../Client/Native/fsr/fsr_pipeline.cpp \
             -o cimgui.so
 
       - name: Setup .NET 9
