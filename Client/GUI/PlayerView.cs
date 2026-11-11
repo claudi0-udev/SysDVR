@@ -239,9 +239,9 @@ namespace SysDVR.Client.GUI
                         return;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Fallback to standard SDL_RenderCopy on error
+                    Console.WriteLine($"[FSR Exception] {ex}");
                 }
             }
 
