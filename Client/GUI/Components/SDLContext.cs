@@ -84,7 +84,7 @@ namespace SysDVR.Client.GUI.Components
             SDLThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
-        public void CreateWindow(string? windowTitle)
+        public void CreateWindow(string? windowTitle, bool fullscreen = false)
         {
             windowTitle = windowTitle is null ?
                 "SysDVR-Client" : $"{windowTitle} - SysDVR-Client";
@@ -92,10 +92,29 @@ namespace SysDVR.Client.GUI.Components
             BugCheckThreadId();
             DestroyWindow();
 
+            var winFlags = SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI | SDL_WindowFlags.SDL_WINDOW_RESIZABLE;
+            int width = StreamInfo.VideoWidth;
+            int height = StreamInfo.VideoHeight;
+
+            if (fullscreen)
+            {
+                winFlags |= SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
+                if (SDL_GetDisplayBounds(0, out var bounds) == 0 && bounds.w > 0 && bounds.h > 0)
+                {
+                    width = bounds.w;
+                    height = bounds.h;
+                }
+            }
+
             WindowHandle = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                StreamInfo.VideoWidth, StreamInfo.VideoHeight,
-                SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI | SDL_WindowFlags.SDL_WINDOW_RESIZABLE)
+                width, height,
+                winFlags)
                 .AssertNotNull(SDL_GetError);
+
+            if (fullscreen)
+            {
+                IsFullscreen = true;
+            }
 
             var flags = Program.Options.ForceSoftwareRenderer ? SDL_RendererFlags.SDL_RENDERER_SOFTWARE :
                 (SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
@@ -106,9 +125,10 @@ namespace SysDVR.Client.GUI.Components
             Console.WriteLine($"Initialized SDL with {Marshal.PtrToStringAnsi(info.name)} renderer");
 
             UpdateSize();
+            ApplyCursorState();
         }
 
-        private bool UpdateSize()
+        public bool UpdateSize()
         {
             var cur = WindowSize;
             SDL_GetWindowSize(WindowHandle, out int w, out int h);
@@ -124,11 +144,11 @@ namespace SysDVR.Client.GUI.Components
                 SDL_GetRendererOutputSize(RendererHandle, out int pixelWidth, out int pixelHeight);
                 PixelSize = new(pixelWidth, pixelHeight);
 
-                float dpiScaleX = pixelWidth / (float)w;
-                float spiScaleY = pixelHeight / (float)h;
-                WantedDPIScale = new(dpiScaleX, spiScaleY);
+                float dpiScaleX = w > 0 ? pixelWidth / (float)w : 1.0f;
+                float dpiScaleY = h > 0 ? pixelHeight / (float)h : 1.0f;
+                WantedDPIScale = new(dpiScaleX, dpiScaleY);
 
-                IsWantedScale = SDL_RenderSetScale(RendererHandle, dpiScaleX, spiScaleY) == 0;
+                IsWantedScale = SDL_RenderSetScale(RendererHandle, dpiScaleX, dpiScaleY) == 0;
             }
 
             return true;
@@ -182,7 +202,9 @@ namespace SysDVR.Client.GUI.Components
             {
                 return GuiMessage.Quit;
             }
-            else if (evt.type == SDL_EventType.SDL_WINDOWEVENT && evt.window.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
+            else if (evt.type == SDL_EventType.SDL_WINDOWEVENT && 
+                    (evt.window.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED ||
+                     evt.window.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED))
             {
                 return UpdateSize() ? GuiMessage.Resize : GuiMessage.Other;
             }
@@ -279,7 +301,22 @@ namespace SysDVR.Client.GUI.Components
         public void SetFullScreen(bool enableFullScreen)
         {
             IsFullscreen = enableFullScreen;
-            SDL_SetWindowFullscreen(WindowHandle, enableFullScreen ? (uint)SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+            if (enableFullScreen)
+            {
+                if (SDL_GetDisplayBounds(0, out var bounds) == 0 && bounds.w > 0 && bounds.h > 0)
+                {
+                    SDL_SetWindowSize(WindowHandle, bounds.w, bounds.h);
+                }
+                SDL_SetWindowFullscreen(WindowHandle, (uint)SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP);
+            }
+            else
+            {
+                SDL_SetWindowFullscreen(WindowHandle, 0);
+                SDL_SetWindowSize(WindowHandle, StreamInfo.VideoWidth, StreamInfo.VideoHeight);
+            }
+
+            SDL_PumpEvents();
+            UpdateSize();
             ApplyCursorState();
         }
 

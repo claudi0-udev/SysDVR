@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using SysDVR.Client.GUI;
 using SysDVR.Client.GUI.Components;
 using SysDVR.Client.Targets.Player;
@@ -55,7 +55,7 @@ namespace SysDVR.Client.App
 
             if (hasVideo)
             {
-                sdlCtx.CreateWindow(CommandLine.WindowTitle);
+                sdlCtx.CreateWindow(CommandLine.WindowTitle, CommandLine.LaunchFullscreen);
 
                 if (CommandLine.LaunchFullscreen)
                 {
@@ -83,7 +83,7 @@ namespace SysDVR.Client.App
                     {
                         if (msg is GuiMessage.BackButton or GuiMessage.Quit)
                             goto break_main_loop;
-                        else if (msg is GuiMessage.Resize)
+                        else if (msg is GuiMessage.Resize or GuiMessage.FullScreen)
                         {
                             player.ResolutionChanged();
                             sdlCtx.ClearScreen();

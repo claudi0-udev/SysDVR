@@ -104,6 +104,12 @@ namespace SysDVR.Client.GUI
             var w = (int)Program.SdlCtx.WindowSize.X;
             var h = (int)Program.SdlCtx.WindowSize.Y;
 
+            if (w <= 0 || h <= 0)
+            {
+                w = StreamInfo.VideoWidth;
+                h = StreamInfo.VideoHeight;
+            }
+
             int fittedWidth;
             int fittedHeight;
 
@@ -472,7 +478,10 @@ namespace SysDVR.Client.GUI
             if (key.sym == SDL_Keycode.SDLK_t)
                 player.RotateClockwise();
             if (key.sym == SDL_Keycode.SDLK_f)
+            {
                 Program.SdlCtx.SetFullScreen(!Program.SdlCtx.IsFullscreen);
+                Owner.UpdateSize();
+            }
             if (key.sym == SDL_Keycode.SDLK_u && HasVideo)
             {
                 Program.Options.RendererScale = Program.Options.RendererScale == SDLScaleMode.FSR ? SDLScaleMode.Linear : SDLScaleMode.FSR;

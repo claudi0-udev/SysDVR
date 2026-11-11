@@ -1,4 +1,4 @@
-﻿namespace SysDVR.Client.App;
+namespace SysDVR.Client.App;
 
 using ImGuiNET;
 using SDL2;
@@ -181,7 +181,7 @@ public class ClientApp : IApplicationInstance
             ImGui.ShowDemoWindow();
     }
 
-    private void UpdateSize()
+    internal void UpdateSize()
     {
         var w = sdlCtx.WindowSize.X;
         var h = sdlCtx.WindowSize.Y;
@@ -308,7 +308,7 @@ public class ClientApp : IApplicationInstance
 
     public void Entrypoint()
     {
-        sdlCtx.CreateWindow(CommandLine.WindowTitle);
+        sdlCtx.CreateWindow(CommandLine.WindowTitle, CommandLine.LaunchFullscreen);
 
         ImGuiSDL2Impl.InitForSDLRenderer(sdlCtx.WindowHandle, sdlCtx.RendererHandle);
         ImGuiSDL2Impl.Init(sdlCtx.RendererHandle);
@@ -334,7 +334,7 @@ public class ClientApp : IApplicationInstance
             {
                 Cap.OnEvent(true);
 
-                if (msg == GuiMessage.Resize)
+                if (msg is GuiMessage.Resize or GuiMessage.FullScreen)
                     UpdateSize();
                 else if (msg == GuiMessage.BackButton)
                 {
