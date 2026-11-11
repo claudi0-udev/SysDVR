@@ -297,6 +297,7 @@ namespace SysDVR.Client.GUI
         Gui.Popup fatalError = new(Program.Strings.General.PopupErrorTitle);
 
         bool drawUi;
+        bool showFsrHud = false;
         string fatalMessage;
 
         public bool IsRecording => videoRecorder is not null;
@@ -440,6 +441,9 @@ namespace SysDVR.Client.GUI
 
             ImGui.End();
 
+            if (showFsrHud && HasVideo)
+                DrawFsrHud();
+
             Program.SdlCtx.ShowCursor(!shouldHideCursor);
         }
 
@@ -461,6 +465,20 @@ namespace SysDVR.Client.GUI
             {
                 Program.Options.RendererScale = Program.Options.RendererScale == SDLScaleMode.FSR ? SDLScaleMode.Linear : SDLScaleMode.FSR;
                 MessageUi($"FSR 1.0: {(Program.Options.RendererScale == SDLScaleMode.FSR ? "Enabled" : "Disabled")}");
+            }
+            if ((key.sym == SDL_Keycode.SDLK_h || key.sym == SDL_Keycode.SDLK_TAB) && HasVideo)
+            {
+                showFsrHud = !showFsrHud;
+            }
+            if ((key.sym == SDL_Keycode.SDLK_LEFTBRACKET || key.sym == SDL_Keycode.SDLK_MINUS || key.sym == SDL_Keycode.SDLK_o) && HasVideo)
+            {
+                Program.Options.FsrSharpness = Math.Clamp(Program.Options.FsrSharpness - 0.05f, 0.0f, 1.0f);
+                MessageUi($"FSR Sharpness: {Program.Options.FsrSharpness:0.00}");
+            }
+            if ((key.sym == SDL_Keycode.SDLK_RIGHTBRACKET || key.sym == SDL_Keycode.SDLK_EQUALS || key.sym == SDL_Keycode.SDLK_p) && HasVideo)
+            {
+                Program.Options.FsrSharpness = Math.Clamp(Program.Options.FsrSharpness + 0.05f, 0.0f, 1.0f);
+                MessageUi($"FSR Sharpness: {Program.Options.FsrSharpness:0.00}");
             }
             if (key.sym == SDL_Keycode.SDLK_UP && player.Manager.AudioTarget is not null)
                 player.Manager.AudioTarget.Volume += 0.1f;
@@ -490,8 +508,34 @@ namespace SysDVR.Client.GUI
             var id = ImGui.GetID("##TepToReveal");
             ImGui.KeepAliveID(id);
 
-            if (ImGui.ButtonBehavior(rect, id, out _, out _, ImGuiButtonFlags.MouseButtonLeft) || ImGui.IsKeyPressed(ImGuiKey.Space))
+            bool toggleOverlay = ImGui.ButtonBehavior(rect, id, out _, out _, ImGuiButtonFlags.MouseButtonLeft)
+                || ImGui.IsKeyPressed(ImGuiKey.Space)
+                || ImGui.IsKeyPressed(ImGuiKey.GamepadStart)
+                || ImGui.IsKeyPressed(ImGuiKey.GamepadBack)
+                || ImGui.IsKeyPressed(ImGuiKey.GamepadFaceUp);
+
+            if (toggleOverlay)
                 drawUi = !drawUi;
+
+            // Direct gamepad shortcuts when overlay is hidden
+            if (!drawUi && HasVideo)
+            {
+                if (ImGui.IsKeyPressed(ImGuiKey.GamepadFaceLeft)) // X button
+                {
+                    Program.Options.RendererScale = Program.Options.RendererScale == SDLScaleMode.FSR ? SDLScaleMode.Linear : SDLScaleMode.FSR;
+                    MessageUi($"FSR 1.0: {(Program.Options.RendererScale == SDLScaleMode.FSR ? "Enabled" : "Disabled")}");
+                }
+                else if (ImGui.IsKeyPressed(ImGuiKey.GamepadL1))
+                {
+                    Program.Options.FsrSharpness = Math.Clamp(Program.Options.FsrSharpness - 0.05f, 0.0f, 1.0f);
+                    MessageUi($"FSR Sharpness: {Program.Options.FsrSharpness:0.00}");
+                }
+                else if (ImGui.IsKeyPressed(ImGuiKey.GamepadR1))
+                {
+                    Program.Options.FsrSharpness = Math.Clamp(Program.Options.FsrSharpness + 0.05f, 0.0f, 1.0f);
+                    MessageUi($"FSR Sharpness: {Program.Options.FsrSharpness:0.00}");
+                }
+            }
         }
 
         void DrawVolumeSlider(float x, float width)
@@ -559,11 +603,24 @@ namespace SysDVR.Client.GUI
                     if (ImGui.Checkbox("FSR 1.0 (AMD)", ref fsrActive))
                         Program.Options.RendererScale = fsrActive ? SDLScaleMode.FSR : SDLScaleMode.Linear;
 
+                    ImGui.SetCursorPosX(center);
+                    if (ImGui.Button(showFsrHud ? "Hide FSR HUD" : "Show FSR HUD", btnsize))
+                        showFsrHud = !showFsrHud;
+
                     if (fsrActive)
                     {
                         ImGui.SetCursorPosX(center);
                         ImGui.SetNextItemWidth(btnwidth);
                         ImGui.SliderFloat("##FsrSharpness", ref Program.Options.FsrSharpness, 0.0f, 1.0f, "FSR Sharpness: %.2f");
+
+                        ImGui.SetCursorPosX(center);
+                        if (ImGui.SmallButton("Soft 0.2")) Program.Options.FsrSharpness = 0.20f;
+                        ImGui.SameLine();
+                        if (ImGui.SmallButton("Bal 0.5")) Program.Options.FsrSharpness = 0.50f;
+                        ImGui.SameLine();
+                        if (ImGui.SmallButton("Sharp 0.85")) Program.Options.FsrSharpness = 0.85f;
+                        ImGui.SameLine();
+                        if (ImGui.SmallButton("Max 1.0")) Program.Options.FsrSharpness = 1.00f;
                     }
                 }
 
@@ -603,15 +660,28 @@ namespace SysDVR.Client.GUI
                 {
                     var w = ImGui.GetWindowSize().X;
                     bool fsrActive = Program.Options.RendererScale == SDLScaleMode.FSR;
-                    ImGui.SetCursorPosX(w / 4);
+                    ImGui.SetCursorPosX(w / 8);
                     if (ImGui.Checkbox("FSR 1.0 (AMD)", ref fsrActive))
                         Program.Options.RendererScale = fsrActive ? SDLScaleMode.FSR : SDLScaleMode.Linear;
+
+                    ImGui.SameLine();
+                    if (ImGui.Button(showFsrHud ? "Hide FSR HUD" : "Show FSR HUD"))
+                        showFsrHud = !showFsrHud;
 
                     if (fsrActive)
                     {
                         ImGui.SameLine();
-                        ImGui.SetNextItemWidth(w / 4);
+                        ImGui.SetNextItemWidth(w / 5);
                         ImGui.SliderFloat("##FsrSharpness", ref Program.Options.FsrSharpness, 0.0f, 1.0f, "Sharpness: %.2f");
+
+                        ImGui.SameLine();
+                        if (ImGui.SmallButton("Soft (0.2)")) Program.Options.FsrSharpness = 0.20f;
+                        ImGui.SameLine();
+                        if (ImGui.SmallButton("Balanced (0.5)")) Program.Options.FsrSharpness = 0.50f;
+                        ImGui.SameLine();
+                        if (ImGui.SmallButton("Sharp (0.85)")) Program.Options.FsrSharpness = 0.85f;
+                        ImGui.SameLine();
+                        if (ImGui.SmallButton("Max (1.0)")) Program.Options.FsrSharpness = 1.00f;
                     }
                 }
 
@@ -627,6 +697,64 @@ namespace SysDVR.Client.GUI
             }
 
             ImGui.GetBackgroundDrawList().AddRectFilled(new(0, OverlayY), ImGui.GetWindowSize(), 0xe0000000);
+        }
+
+        void DrawFsrHud()
+        {
+            var io = ImGui.GetIO();
+            float padding = 15f;
+            var windowPos = new Vector2(io.DisplaySize.X - 330f - padding, padding);
+
+            ImGui.SetNextWindowPos(windowPos, ImGuiCond.Always);
+            ImGui.SetNextWindowSize(new Vector2(330f, 0f));
+            ImGui.SetNextWindowBgAlpha(0.75f);
+
+            var flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.AlwaysAutoResize |
+                        ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing |
+                        ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoMove;
+
+            if (ImGui.Begin("##FsrHud", flags))
+            {
+                bool isFsr = Program.Options.RendererScale == SDLScaleMode.FSR;
+                ImGui.TextColored(new Vector4(0.2f, 0.8f, 1f, 1f), "AMD FidelityFX Super Resolution");
+                ImGui.Separator();
+
+                ImGui.Text("Status:");
+                ImGui.SameLine(120);
+                if (isFsr)
+                    ImGui.TextColored(new Vector4(0.2f, 1f, 0.2f, 1f), "ACTIVE (EASU+RCAS)");
+                else
+                    ImGui.TextColored(new Vector4(1f, 0.4f, 0.4f, 1f), "OFF (Bilinear)");
+
+                if (isFsr)
+                {
+                    ImGui.Text("Sharpness:");
+                    ImGui.SameLine(120);
+                    ImGui.Text($"{Program.Options.FsrSharpness:0.00}");
+                }
+
+                ImGui.Text("Input Res:");
+                ImGui.SameLine(120);
+                ImGui.Text($"{StreamInfo.VideoWidth}x{StreamInfo.VideoHeight} (720p)");
+
+                ImGui.Text("Output Res:");
+                ImGui.SameLine(120);
+                ImGui.Text($"{(int)io.DisplaySize.X}x{(int)io.DisplaySize.Y}");
+
+                float scaleRatio = io.DisplaySize.Y / StreamInfo.VideoHeight;
+                ImGui.Text("Scale Factor:");
+                ImGui.SameLine(120);
+                ImGui.Text($"{scaleRatio:0.00}x");
+
+                ImGui.Text("Render FPS:");
+                ImGui.SameLine(120);
+                ImGui.Text($"{io.Framerate:0.0} FPS");
+
+                ImGui.Separator();
+                ImGui.TextDisabled("Hotkeys: [U] Toggle FSR | [-]/[+] Sharpness\n[H] Toggle HUD | [Y]/[Start] Menu");
+
+                ImGui.End();
+            }
         }
 
         void DrawQuitModal()
