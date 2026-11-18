@@ -11,6 +11,7 @@
 *.sln.docstates
 .cimgui_build/
 published-arm64/
+published-x64/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
