@@ -47,6 +47,7 @@ g++ -shared -fPIC -O2 \
     ../cimgui/imgui/backends/imgui_impl_sdl2.cpp \
     ../cimgui/imgui/backends/imgui_impl_sdlrenderer2.cpp \
     /src/Client/Native/fsr/fsr_pipeline.cpp \
+    -lSDL2 \
     -o cimgui.so
 
 mkdir -p /src/Client/Platform/Resources/linux-x64/native
