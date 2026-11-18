@@ -13,6 +13,9 @@
 published-arm64/
 published-x64/
 Client/Platform/Resources/linux-*/
+.appimage_tools/
+AppDir*/
+*.AppImage
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
