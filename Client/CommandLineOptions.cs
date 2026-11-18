@@ -45,6 +45,8 @@ namespace SysDVR.Client
 			new OptionNoArg("--software-render", (x) => x.SoftwareRendering = true),
 			new OptionNoArg("--fsr", (x) => x.EnableFsr = true),
 			new OptionArg("--fsr-sharpness", (x, v) => x.FsrSharpness = v),
+			new OptionArg("--fsr-res", (x, v) => x.FsrResolution = v),
+			new OptionArg("--fsr-scale", (x, v) => x.FsrResolution = v),
 
 			// Deprecated RTSP options
 			new OptionNoArg("--rtsp", x => x.RTSPDeprecationWarning = true),
@@ -172,6 +174,7 @@ namespace SysDVR.Client
 		public bool SoftwareRendering;
 		public bool? EnableFsr;
 		public string? FsrSharpness;
+		public string? FsrResolution;
 
 		public void ApplyOptionOverrides() 
 		{
@@ -209,6 +212,18 @@ namespace SysDVR.Client
 
 			if (FsrSharpness is not null && float.TryParse(FsrSharpness, System.Globalization.CultureInfo.InvariantCulture, out var sharpness))
 				Program.Options.FsrSharpness = Math.Clamp(sharpness, 0.0f, 1.0f);
+
+			if (FsrResolution is not null)
+			{
+				var resLower = FsrResolution.Trim().ToLowerInvariant();
+				Program.Options.FsrResolution = resLower switch
+				{
+					"1080" or "1080p" or "fhd" => FsrTargetResolution.Res1080p,
+					"1440" or "1440p" or "2k" or "qhd" => FsrTargetResolution.Res1440p,
+					"2160" or "2160p" or "4k" or "uhd" => FsrTargetResolution.Res4k,
+					_ => FsrTargetResolution.Auto
+				};
+			}
 
 			if (Volume is not null && int.TryParse(Volume, out var vol))
 			{ 
@@ -263,6 +278,7 @@ Player options:
 	`--decoder <name>` : Use a specific decoder for ffmpeg decoding, you can see all supported codecs with --show-decoders
 	`--fsr` : Enable AMD FidelityFX Super Resolution (FSR 1.0) upscaling
 	`--fsr-sharpness <value>` : Set FSR sharpness between 0.0 (soft) and 1.0 (sharp), default is 0.8
+	`--fsr-res <auto|1080p|1440p|4k>` : Set internal FSR scaling resolution. Values higher than display resolution activate SSAA downsampling
 	`--fullscreen` : Start in full screen mode. Press F11 to toggle manually
 	`--title <some text>` : Adds the argument string to the title of the player window
 	`--legacy` : Use the old player without the GUI, not all the other options are available when this is used

@@ -235,12 +235,39 @@ namespace SysDVR.Client.GUI
                     int targetW = (int)Math.Round(DisplayRect.w * dpiX);
                     int targetH = (int)Math.Round(DisplayRect.h * dpiY);
 
+                    int internalW = targetW;
+                    int internalH = targetH;
+                    if (targetH > 0)
+                    {
+                        switch (Program.Options.FsrResolution)
+                        {
+                            case FsrTargetResolution.Res1080p:
+                                internalH = 1080;
+                                internalW = (int)Math.Round(1080.0 * targetW / targetH);
+                                break;
+                            case FsrTargetResolution.Res1440p:
+                                internalH = 1440;
+                                internalW = (int)Math.Round(1440.0 * targetW / targetH);
+                                break;
+                            case FsrTargetResolution.Res4k:
+                                internalH = 2160;
+                                internalW = (int)Math.Round(2160.0 * targetW / targetH);
+                                break;
+                            case FsrTargetResolution.Auto:
+                            default:
+                                internalW = targetW;
+                                internalH = targetH;
+                                break;
+                        }
+                    }
+
                     if (FsrNative.Render(
                         Program.SdlCtx.RendererHandle,
                         Video.TargetTexture,
                         StreamInfo.VideoWidth, StreamInfo.VideoHeight,
                         targetX, targetY, targetW, targetH,
-                        Program.Options.FsrSharpness))
+                        Program.Options.FsrSharpness,
+                        internalW, internalH))
                     {
                         return;
                     }
@@ -487,6 +514,10 @@ namespace SysDVR.Client.GUI
                 Program.Options.RendererScale = Program.Options.RendererScale == SDLScaleMode.FSR ? SDLScaleMode.Linear : SDLScaleMode.FSR;
                 MessageUi($"FSR 1.0: {(Program.Options.RendererScale == SDLScaleMode.FSR ? "Enabled" : "Disabled")}");
             }
+            if (key.sym == SDL_Keycode.SDLK_i && HasVideo)
+            {
+                CycleFsrResolution();
+            }
             if ((key.sym == SDL_Keycode.SDLK_h || key.sym == SDL_Keycode.SDLK_TAB) && HasVideo)
             {
                 showFsrHud = !showFsrHud;
@@ -545,6 +576,10 @@ namespace SysDVR.Client.GUI
                 {
                     Program.Options.RendererScale = Program.Options.RendererScale == SDLScaleMode.FSR ? SDLScaleMode.Linear : SDLScaleMode.FSR;
                     MessageUi($"FSR 1.0: {(Program.Options.RendererScale == SDLScaleMode.FSR ? "Enabled" : "Disabled")}");
+                }
+                else if (ImGui.IsKeyPressed(ImGuiKey.GamepadDpadUp))
+                {
+                    CycleFsrResolution();
                 }
                 else if (ImGui.IsKeyPressed(ImGuiKey.GamepadL1))
                 {
@@ -642,6 +677,21 @@ namespace SysDVR.Client.GUI
                         if (ImGui.SmallButton("Sharp 0.85")) Program.Options.FsrSharpness = 0.85f;
                         ImGui.SameLine();
                         if (ImGui.SmallButton("Max 1.0")) Program.Options.FsrSharpness = 1.00f;
+
+                        ImGui.SetCursorPosX(center);
+                        ImGui.Text("Res:");
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("Auto##p", Program.Options.FsrResolution == FsrTargetResolution.Auto))
+                            Program.Options.FsrResolution = FsrTargetResolution.Auto;
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("1080p##p", Program.Options.FsrResolution == FsrTargetResolution.Res1080p))
+                            Program.Options.FsrResolution = FsrTargetResolution.Res1080p;
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("1440p##p", Program.Options.FsrResolution == FsrTargetResolution.Res1440p))
+                            Program.Options.FsrResolution = FsrTargetResolution.Res1440p;
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("4K##p", Program.Options.FsrResolution == FsrTargetResolution.Res4k))
+                            Program.Options.FsrResolution = FsrTargetResolution.Res4k;
                     }
                 }
 
@@ -692,8 +742,8 @@ namespace SysDVR.Client.GUI
                     if (fsrActive)
                     {
                         ImGui.SameLine();
-                        ImGui.SetNextItemWidth(w / 5);
-                        ImGui.SliderFloat("##FsrSharpness", ref Program.Options.FsrSharpness, 0.0f, 1.0f, "Sharpness: %.2f");
+                        ImGui.SetNextItemWidth(w / 7);
+                        ImGui.SliderFloat("##FsrSharpness", ref Program.Options.FsrSharpness, 0.0f, 1.0f, "Sharp: %.2f");
 
                         ImGui.SameLine();
                         if (ImGui.SmallButton("Soft (0.2)")) Program.Options.FsrSharpness = 0.20f;
@@ -703,6 +753,21 @@ namespace SysDVR.Client.GUI
                         if (ImGui.SmallButton("Sharp (0.85)")) Program.Options.FsrSharpness = 0.85f;
                         ImGui.SameLine();
                         if (ImGui.SmallButton("Max (1.0)")) Program.Options.FsrSharpness = 1.00f;
+
+                        ImGui.SameLine();
+                        ImGui.Text("| Res:");
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("Auto", Program.Options.FsrResolution == FsrTargetResolution.Auto))
+                            Program.Options.FsrResolution = FsrTargetResolution.Auto;
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("1080p", Program.Options.FsrResolution == FsrTargetResolution.Res1080p))
+                            Program.Options.FsrResolution = FsrTargetResolution.Res1080p;
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("1440p", Program.Options.FsrResolution == FsrTargetResolution.Res1440p))
+                            Program.Options.FsrResolution = FsrTargetResolution.Res1440p;
+                        ImGui.SameLine();
+                        if (ImGui.RadioButton("4K", Program.Options.FsrResolution == FsrTargetResolution.Res4k))
+                            Program.Options.FsrResolution = FsrTargetResolution.Res4k;
                     }
                 }
 
@@ -720,14 +785,36 @@ namespace SysDVR.Client.GUI
             ImGui.GetBackgroundDrawList().AddRectFilled(new(0, OverlayY), ImGui.GetWindowSize(), 0xe0000000);
         }
 
+        static string GetFsrResName(FsrTargetResolution res) => res switch
+        {
+            FsrTargetResolution.Auto => "Auto",
+            FsrTargetResolution.Res1080p => "1080p",
+            FsrTargetResolution.Res1440p => "1440p",
+            FsrTargetResolution.Res4k => "4K",
+            _ => "Auto"
+        };
+
+        void CycleFsrResolution()
+        {
+            Program.Options.FsrResolution = Program.Options.FsrResolution switch
+            {
+                FsrTargetResolution.Auto => FsrTargetResolution.Res1080p,
+                FsrTargetResolution.Res1080p => FsrTargetResolution.Res1440p,
+                FsrTargetResolution.Res1440p => FsrTargetResolution.Res4k,
+                FsrTargetResolution.Res4k => FsrTargetResolution.Auto,
+                _ => FsrTargetResolution.Auto
+            };
+            MessageUi($"FSR Resolution: {GetFsrResName(Program.Options.FsrResolution)}");
+        }
+
         void DrawFsrHud()
         {
             var io = ImGui.GetIO();
             float padding = 15f;
-            var windowPos = new Vector2(io.DisplaySize.X - 330f - padding, padding);
+            var windowPos = new Vector2(io.DisplaySize.X - 350f - padding, padding);
 
             ImGui.SetNextWindowPos(windowPos, ImGuiCond.Always);
-            ImGui.SetNextWindowSize(new Vector2(330f, 0f));
+            ImGui.SetNextWindowSize(new Vector2(350f, 0f));
             ImGui.SetNextWindowBgAlpha(0.75f);
 
             var flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.AlwaysAutoResize |
@@ -741,41 +828,80 @@ namespace SysDVR.Client.GUI
                 ImGui.Separator();
 
                 ImGui.Text("Status:");
-                ImGui.SameLine(120);
+                ImGui.SameLine(130);
                 if (isFsr)
                     ImGui.TextColored(new Vector4(0.2f, 1f, 0.2f, 1f), "ACTIVE (EASU+RCAS)");
                 else
                     ImGui.TextColored(new Vector4(1f, 0.4f, 0.4f, 1f), "OFF (Bilinear)");
 
-                if (isFsr)
-                {
-                    ImGui.Text("Sharpness:");
-                    ImGui.SameLine(120);
-                    ImGui.Text($"{Program.Options.FsrSharpness:0.00}");
-                }
-
-                ImGui.Text("Input Res:");
-                ImGui.SameLine(120);
-                ImGui.Text($"{StreamInfo.VideoWidth}x{StreamInfo.VideoHeight} (720p)");
-
                 int outW = Program.SdlCtx.PixelSize.X > 0 ? (int)Program.SdlCtx.PixelSize.X : (int)io.DisplaySize.X;
                 int outH = Program.SdlCtx.PixelSize.Y > 0 ? (int)Program.SdlCtx.PixelSize.Y : (int)io.DisplaySize.Y;
 
-                ImGui.Text("Output Res:");
-                ImGui.SameLine(120);
+                int internalW = outW;
+                int internalH = outH;
+                if (outH > 0)
+                {
+                    switch (Program.Options.FsrResolution)
+                    {
+                        case FsrTargetResolution.Res1080p:
+                            internalH = 1080;
+                            internalW = (int)Math.Round(1080.0 * outW / outH);
+                            break;
+                        case FsrTargetResolution.Res1440p:
+                            internalH = 1440;
+                            internalW = (int)Math.Round(1440.0 * outW / outH);
+                            break;
+                        case FsrTargetResolution.Res4k:
+                            internalH = 2160;
+                            internalW = (int)Math.Round(2160.0 * outW / outH);
+                            break;
+                        case FsrTargetResolution.Auto:
+                        default:
+                            internalW = outW;
+                            internalH = outH;
+                            break;
+                    }
+                }
+
+                bool isSsaa = isFsr && (internalW != outW || internalH != outH);
+
+                if (isFsr)
+                {
+                    ImGui.Text("Sharpness:");
+                    ImGui.SameLine(130);
+                    ImGui.Text($"{Program.Options.FsrSharpness:0.00}");
+
+                    ImGui.Text("FSR Internal:");
+                    ImGui.SameLine(130);
+                    ImGui.Text($"{internalW}x{internalH} ({GetFsrResName(Program.Options.FsrResolution)})");
+
+                    if (isSsaa)
+                    {
+                        ImGui.Text("SSAA Downsample:");
+                        ImGui.SameLine(130);
+                        ImGui.TextColored(new Vector4(1f, 0.8f, 0.2f, 1f), "Enabled");
+                    }
+                }
+
+                ImGui.Text("Input Res:");
+                ImGui.SameLine(130);
+                ImGui.Text($"{StreamInfo.VideoWidth}x{StreamInfo.VideoHeight} (720p)");
+
+                ImGui.Text("Display Out:");
+                ImGui.SameLine(130);
                 ImGui.Text($"{outW}x{outH}");
 
-                float scaleRatio = (float)outH / StreamInfo.VideoHeight;
+                float scaleRatio = (float)internalH / StreamInfo.VideoHeight;
                 ImGui.Text("Scale Factor:");
-                ImGui.SameLine(120);
+                ImGui.SameLine(130);
                 ImGui.Text($"{scaleRatio:0.00}x");
 
                 ImGui.Text("Render FPS:");
-                ImGui.SameLine(120);
+                ImGui.SameLine(130);
                 ImGui.Text($"{io.Framerate:0.0} FPS");
 
                 ImGui.Separator();
-                ImGui.TextDisabled("Hotkeys: [U] Toggle FSR | [-]/[+] Sharpness\n[H] Toggle HUD | [Y]/[Start] Menu");
+                ImGui.TextDisabled("Hotkeys: [U] Toggle FSR | [I] Resolution\n[-]/[+] Sharpness | [H] Toggle HUD");
 
                 ImGui.End();
             }

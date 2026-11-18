@@ -226,6 +226,14 @@ static struct {
     GLuint fbo_easu;
     GLuint tex_easu;
 
+    // Intermediate RCAS FBO & Texture (for SSAA when internal != output)
+    GLuint fbo_rcas;
+    GLuint tex_rcas;
+
+    // Passthrough Blit Program & Uniforms
+    GLuint prog_blit;
+    GLint loc_blit_tex;
+
     // SDL 720p RGBA Render Target Texture
     SDL_Texture* sdl_rgba_src;
 } fsr = {0};
@@ -275,9 +283,11 @@ static GLuint link_program(GLuint vs, GLuint fs) {
     return prog;
 }
 
-static bool resize_easu_fbo(int w, int h) {
-    if (fsr.fbo_w == w && fsr.fbo_h == h && fsr.fbo_easu != 0)
-        return true;
+static bool resize_fbos(int w, int h, bool needs_rcas_fbo) {
+    if (fsr.fbo_w == w && fsr.fbo_h == h && fsr.fbo_easu != 0) {
+        if (!needs_rcas_fbo || fsr.fbo_rcas != 0)
+            return true;
+    }
 
     if (fsr.tex_easu != 0) {
         gl.glDeleteTextures(1, &fsr.tex_easu);
@@ -287,7 +297,16 @@ static bool resize_easu_fbo(int w, int h) {
         gl.glDeleteFramebuffers(1, &fsr.fbo_easu);
         fsr.fbo_easu = 0;
     }
+    if (fsr.tex_rcas != 0) {
+        gl.glDeleteTextures(1, &fsr.tex_rcas);
+        fsr.tex_rcas = 0;
+    }
+    if (fsr.fbo_rcas != 0) {
+        gl.glDeleteFramebuffers(1, &fsr.fbo_rcas);
+        fsr.fbo_rcas = 0;
+    }
 
+    // EASU Texture & FBO
     gl.glGenTextures(1, &fsr.tex_easu);
     gl.glBindTexture(GL_TEXTURE_2D, fsr.tex_easu);
     gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -301,13 +320,34 @@ static bool resize_easu_fbo(int w, int h) {
     gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fsr.tex_easu, 0);
 
     GLenum status = gl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         fprintf(stderr, "[FSR] Failed to create complete FBO for EASU (status 0x%X)\n", status);
+        gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return false;
     }
 
+    if (needs_rcas_fbo) {
+        gl.glGenTextures(1, &fsr.tex_rcas);
+        gl.glBindTexture(GL_TEXTURE_2D, fsr.tex_rcas);
+        gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        gl.glGenFramebuffers(1, &fsr.fbo_rcas);
+        gl.glBindFramebuffer(GL_FRAMEBUFFER, fsr.fbo_rcas);
+        gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fsr.tex_rcas, 0);
+
+        status = gl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            fprintf(stderr, "[FSR] Failed to create complete FBO for RCAS (status 0x%X)\n", status);
+            gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            return false;
+        }
+    }
+
+    gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
     fsr.fbo_w = w;
     fsr.fbo_h = h;
     return true;
@@ -359,14 +399,26 @@ bool fsr_init(void* sdlRenderer, int srcW, int srcH) {
 
     fsr.prog_rcas = link_program(vs, fs_rcas);
     gl.glDeleteShader(fs_rcas);
-    gl.glDeleteShader(vs);
     if (!fsr.prog_rcas) {
+        gl.glDeleteShader(vs);
         gl.glDeleteProgram(fsr.prog_easu);
         return false;
     }
 
     fsr.loc_rcas_tex = gl.glGetUniformLocation(fsr.prog_rcas, "InputTexture");
     fsr.loc_rcas_con = gl.glGetUniformLocation(fsr.prog_rcas, "rcas_con");
+
+    // Compile Blit Program (for SSAA downsampling)
+    GLuint fs_blit = compile_shader(GL_FRAGMENT_SHADER, FSR_BLIT_FS_SRC);
+    if (fs_blit) {
+        fsr.prog_blit = link_program(vs, fs_blit);
+        gl.glDeleteShader(fs_blit);
+        if (fsr.prog_blit) {
+            fsr.loc_blit_tex = gl.glGetUniformLocation(fsr.prog_blit, "BlitTexture");
+        }
+    }
+
+    gl.glDeleteShader(vs);
 
     // Fullscreen quad VBO (NDC coordinates: -1 to 1)
     static const float quad_verts[] = {
@@ -408,12 +460,20 @@ bool fsr_render(
     void* sdlTexture,
     int srcW, int srcH,
     int dstX, int dstY, int dstW, int dstH,
-    float sharpness
+    float sharpness,
+    int internalW, int internalH
 ) {
     if (!fsr.initialized || fsr.src_w != srcW || fsr.src_h != srcH) {
         if (!fsr_init(sdlRenderer, srcW, srcH))
             return false;
     }
+
+    if (internalW <= 0 || internalH <= 0) {
+        internalW = dstW;
+        internalH = dstH;
+    }
+
+    bool ssaa = (internalW != dstW || internalH != dstH);
 
     SDL_Renderer* renderer = (SDL_Renderer*)sdlRenderer;
     SDL_Texture* yuvTex = (SDL_Texture*)sdlTexture;
@@ -444,7 +504,7 @@ bool fsr_render(
         }
     }
 
-    if (!resize_easu_fbo(dstW, dstH))
+    if (!resize_fbos(internalW, internalH, ssaa))
         return false;
 
     // Step 1: Hardware/GPU YUV -> RGBA conversion via SDL RenderCopy
@@ -482,15 +542,15 @@ bool fsr_render(
     gl.glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
     // -------------------------------------------------------------
-    // PASS 1: EASU (Upscaling from 720p RGBA to Target Resolution FBO)
+    // PASS 1: EASU (Upscaling from 720p RGBA to internalW x internalH)
     // -------------------------------------------------------------
     gl.glBindFramebuffer(GL_FRAMEBUFFER, fsr.fbo_easu);
-    gl.glViewport(0, 0, dstW, dstH);
+    gl.glViewport(0, 0, internalW, internalH);
 
     gl.glUseProgram(fsr.prog_easu);
 
     float con0[4], con1[4], con2[4], con3[4];
-    FsrEasuCon(con0, con1, con2, con3, (float)srcW, (float)srcH, (float)dstW, (float)dstH);
+    FsrEasuCon(con0, con1, con2, con3, (float)srcW, (float)srcH, (float)internalW, (float)internalH);
     gl.glUniform4fv(fsr.loc_easu_con0, 1, con0);
     gl.glUniform4fv(fsr.loc_easu_con1, 1, con1);
     gl.glUniform4fv(fsr.loc_easu_con2, 1, con2);
@@ -506,13 +566,18 @@ bool fsr_render(
     SDL_GL_UnbindTexture(fsr.sdl_rgba_src);
 
     // -------------------------------------------------------------
-    // PASS 2: RCAS (Sharpening to Screen Viewport)
+    // PASS 2: RCAS (Sharpening)
     // -------------------------------------------------------------
-    gl.glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
-    
     // In OpenGL, viewport Y starts from bottom-left
     int gl_y = win_h - (dstY + dstH);
-    gl.glViewport(dstX, gl_y, dstW, dstH);
+
+    if (ssaa) {
+        gl.glBindFramebuffer(GL_FRAMEBUFFER, fsr.fbo_rcas);
+        gl.glViewport(0, 0, internalW, internalH);
+    } else {
+        gl.glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+        gl.glViewport(dstX, gl_y, dstW, dstH);
+    }
 
     gl.glUseProgram(fsr.prog_rcas);
 
@@ -525,6 +590,22 @@ bool fsr_render(
     gl.glUniform1i(fsr.loc_rcas_tex, 0);
 
     gl.glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // -------------------------------------------------------------
+    // PASS 3: SSAA Downsampling to Display Viewport (Only when ssaa is true)
+    // -------------------------------------------------------------
+    if (ssaa && fsr.prog_blit) {
+        gl.glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+        gl.glViewport(dstX, gl_y, dstW, dstH);
+
+        gl.glUseProgram(fsr.prog_blit);
+
+        gl.glActiveTexture(GL_TEXTURE0);
+        gl.glBindTexture(GL_TEXTURE_2D, fsr.tex_rcas);
+        gl.glUniform1i(fsr.loc_blit_tex, 0);
+
+        gl.glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
 
     // -------------------------------------------------------------
     // Restore OpenGL State
@@ -575,6 +656,18 @@ void fsr_destroy() {
         if (fsr.prog_rcas) {
             gl.glDeleteProgram(fsr.prog_rcas);
             fsr.prog_rcas = 0;
+        }
+        if (fsr.prog_blit) {
+            gl.glDeleteProgram(fsr.prog_blit);
+            fsr.prog_blit = 0;
+        }
+        if (fsr.tex_rcas) {
+            gl.glDeleteTextures(1, &fsr.tex_rcas);
+            fsr.tex_rcas = 0;
+        }
+        if (fsr.fbo_rcas) {
+            gl.glDeleteFramebuffers(1, &fsr.fbo_rcas);
+            fsr.fbo_rcas = 0;
         }
     }
 

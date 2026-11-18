@@ -189,6 +189,19 @@ static const char* FSR_RCAS_FS_SRC =
 "    FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);\n"
 "}\n";
 
+// Linear Downsample / Passthrough Blit Fragment Shader (for Super Sampling)
+static const char* FSR_BLIT_FS_SRC =
+"#version 300 es\n"
+"precision highp float;\n"
+"\n"
+"uniform sampler2D BlitTexture;\n"
+"in vec2 vTexCoord;\n"
+"out vec4 FragColor;\n"
+"\n"
+"void main() {\n"
+"    FragColor = texture(BlitTexture, vTexCoord);\n"
+"}\n";
+
 #ifdef __cplusplus
 }
 #endif

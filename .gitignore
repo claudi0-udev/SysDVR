@@ -12,6 +12,7 @@
 .cimgui_build/
 published-arm64/
 published-x64/
+Client/Platform/Resources/linux-*/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

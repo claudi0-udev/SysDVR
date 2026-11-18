@@ -16,7 +16,8 @@ namespace SysDVR.Client.Targets.Player
             nint sdlTexture,
             int srcW, int srcH,
             int dstX, int dstY, int dstW, int dstH,
-            float sharpness
+            float sharpness,
+            int internalW, int internalH
         );
 
         [DllImport("cimgui", EntryPoint = "fsr_destroy")]

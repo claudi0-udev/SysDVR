@@ -21,6 +21,14 @@ namespace SysDVR.Client.Core
         FSR
     }
 
+    public enum FsrTargetResolution
+    {
+        Auto,
+        Res1080p,
+        Res1440p,
+        Res4k
+    }
+
     public enum SDLAudioMode 
     {
         Compatible,
@@ -54,6 +62,7 @@ namespace SysDVR.Client.Core
         public bool ForceSoftwareRenderer;
         public SDLScaleMode RendererScale = SDLScaleMode.Linear;
         public float FsrSharpness = 0.8f;
+        public FsrTargetResolution FsrResolution = FsrTargetResolution.Auto;
         public SDLAudioMode AudioPlayerMode = SDLAudioMode.Auto;
 
         // Sysmodule options

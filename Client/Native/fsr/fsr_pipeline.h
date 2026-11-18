@@ -19,12 +19,14 @@ FSR_API bool fsr_is_supported();
 FSR_API bool fsr_init(void* sdlRenderer, int srcW, int srcH);
 
 // Execute FSR passes (EASU + RCAS) and render to current display viewport
+// If internalW / internalH > 0 and differ from dstW / dstH, super-sampling is performed
 FSR_API bool fsr_render(
     void* sdlRenderer,
     void* sdlTexture,
     int srcW, int srcH,
     int dstX, int dstY, int dstW, int dstH,
-    float sharpness
+    float sharpness,
+    int internalW, int internalH
 );
 
 // Release all allocated GL and SDL resources
